@@ -1,43 +1,20 @@
 import './App.css'
 import { useState, useEffect } from 'react'
+import confetti from "canvas-confetti"
+import { Square } from "./components/Square.jsx"
+import { TURNS, WINNER_COMBOS } from "./components/constants.js"
 
-
-const TURNS = {
-  X: 'x',
-  O: 'o'
-}
-
-
-const Square = ({ children, isSelected, updateBoard, index })=> {
-  const className = `square ${isSelected ? 'is-selected' : ''}`
-
-  const handleClick = () =>{
-    updateBoard(index)
-  }
-
-  return (
-  <div onClick={handleClick} className={className}>
-    {children}
-  </div>
-  )
-}
-
-const WINNER_COMBOS = [
-  [0, 1, 2],
-  [3, 4, 5],
-  [6, 7, 8],
-  [0, 3, 6],
-  [1, 4, 7],
-  [2, 5, 8],
-  [0, 4, 8],
-  [2, 4, 6],
-]
 
 function App() {
 
-const [board, setBoard] = useState(Array(9).fill(null))
+const [board, setBoard] = useState(() =>{
+  const boardFromStorage = window.localStorage.getItem('board')
+  return boardFromStorage ? JSON.parse(boardFromStorage) : Array(9).fill(null)})
 
-const [turn, setTurn] = useState(TURNS.X)
+const [turn, setTurn] = useState(() =>{
+  const turnFromStorage = window.localStorage.getItem('turn')
+  return turnFromStorage ?? TURNS.X
+})
 
 const [winner, setWinner] = useState(null)
 
@@ -53,13 +30,16 @@ const checkWinner = (boardtoCheck) =>{
     }
   }
   return null
-
 }
 
 const resetGame = () =>{
   setBoard(Array(9).fill(null))
   setTurn(TURNS.X)
   setWinner(null)
+
+  window.localStorage.removeItem('board')
+  window.localStorage.removeItem('turn')
+
 }
 
 const checkEndGame = (newBoard) =>{
@@ -76,9 +56,13 @@ const updateBoard = (index) =>{
   // CAMBIAR EL TURNO
   const newTurn = turn === TURNS.X ? TURNS.O : TURNS.X
   setTurn(newTurn)
+  // GUARDAR PARTIDA
+  window.localStorage.setItem('board', JSON.stringify(newBoard))
+  window.localStorage.setItem('turn', newTurn)
   // REVISAR SI ALGUIEN GANÓ
   const newWinner = checkWinner(newBoard)
   if(newWinner) {
+    confetti()
     setWinner(newWinner)
 // REVISAR SI HAY EMPATE    
   }else if (checkEndGame(newBoard)){
@@ -94,14 +78,14 @@ const updateBoard = (index) =>{
       <h1>Ta-Te-Ti</h1>
       <button onClick={resetGame}>Reset</button>
       <section className='game'>
-        {board.map((_,index) =>{
+        {board.map((square,index) =>{
           return (
             <Square
             key={index}
             index={index}
             updateBoard={updateBoard}
             >
-              {board[index]}
+              {square}
             </Square>
           )
         })
